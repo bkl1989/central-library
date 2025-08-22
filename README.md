@@ -1,1 +1,1 @@
-Some new ways to inde historical data
+Some new ways to index historical data
