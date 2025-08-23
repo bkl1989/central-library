@@ -5,6 +5,6 @@ int main() {
     static_assert(__cplusplus >= 202100L, 
                   "This program requires C++23 or later");
 
-    std::cout << "Hello, world! (C++ standard: " << __cplusplus << ")\n";
+    std::cout << __cplusplus;
     return 0;
 }
