@@ -138,9 +138,9 @@ class CompositeSubGrammarComponent : public SubGrammarComponent {
     }
 
     virtual ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
-        //add text to current node
-        //empty and returning true proceeds through the string being parsed
-        currentNode->addCharacter(nextCharacter);
+        for (SubGrammarComponent *nextComponent : *subGrammarComponents) {
+            currentNode = nextComponent->parse(nextCharacter, currentNode, subGrammarReferences);
+        }
         return currentNode;
     }
 
@@ -179,6 +179,25 @@ class PopSubGrammarComponent : public SubGrammarComponent {
     ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         currentNode->getParent()->addCharacter(nextCharacter);
         currentNode = currentNode->getParent()->getParent()->createChild("");
+        return currentNode;
+    }
+
+    std::string toString() const {
+        return "Pop subGrammar component";
+    }
+};
+
+class SwitchSubGrammarComponent : public SubGrammarComponent {
+    std::string name;
+
+    public:
+    SwitchSubGrammarComponent(std::string n) {
+        name = n;
+    }
+
+    ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+        std::cout << "parse in switch sub grammar\n";
+        subGrammarReferences->push(name);
         return currentNode;
     }
 
@@ -267,9 +286,16 @@ public:
     }
 
     ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+        ParserNode *nextNode = NULL;
         std::string subGrammarReference = subGrammarReferences->top();
         SubGrammarParser *subGrammarParser = (*subGrammarParsersByName)[subGrammarReference];
-        return subGrammarParser->parse(nextCharacter, currentNode, subGrammarReferences);
+        if (subGrammarParser == NULL) {
+            std::cout << "could not find sub grammar for key " << subGrammarReference << "\n";
+        }
+        else {
+            nextNode = subGrammarParser->parse(nextCharacter, currentNode, subGrammarReferences);
+        }
+        return nextNode;
     }
 };
 
@@ -290,11 +316,12 @@ int main() {
     testSubGrammar.addComponent(&closeBracket, &popComponent);
 
     // //quote pushes object and pushes the quote subGrammar
-    // CharacterSet quote("\"");
-    // CompositeSubGrammarComponent quoteCompositeComponent;
-    // PushSubGrammarComponent quotePushComponent;
-    // SwitchSubGrammarComponent quoteSwitchComponent;
-    // testSubGrammar.addComponent(&quote, &quoteCompositeComponent);
+    CharacterSet quote("\"");
+    CompositeSubGrammarComponent quoteCompositeComponent;
+    quoteCompositeComponent.addSubGrammarComponent(pushComponent);
+    SwitchSubGrammarComponent quoteSwitchComponent("quote");
+    quoteCompositeComponent.addSubGrammarComponent(quoteSwitchComponent);
+    testSubGrammar.addComponent(&quote, &quoteCompositeComponent);
 
     SubGrammarParser rootParser(testSubGrammar);
     GrammarParser parser;
@@ -305,6 +332,7 @@ int main() {
 
     std::stack<std::string> subGrammarReferences;
     subGrammarReferences.push("root");
+
     ParserNode *currentNode = rootNode.lastChild();
     for (char32_t nextCharacter : testParse) {
         currentNode = parser.parse(nextCharacter, currentNode, &subGrammarReferences);
