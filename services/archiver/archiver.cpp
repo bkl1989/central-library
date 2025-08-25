@@ -36,7 +36,7 @@ public:
     std::string toString(std::string indentation) const {
         std::string parserNodeString = indentation + U32StringToString(*text) + "\n";
         for (ParserNode *childNode : *children) {
-            parserNodeString += childNode->toString(indentation + "    ");
+            parserNodeString += childNode->toString(indentation + "----");
         }
         return parserNodeString;
     }
@@ -94,6 +94,11 @@ public:
     }
 };
 
+struct ParserResult {
+    ParserNode *node;
+    std::string error;
+};
+
 class CharacterSet {
 private:
     std::vector<char32_t> *characters;
@@ -117,11 +122,11 @@ public:
 
 class SubGrammarComponent {
     public:
-    virtual ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    virtual ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         //add text to current node
         //empty and returning true proceeds through the string being parsed
         currentNode->addCharacter(nextCharacter);
-        return currentNode;
+        return { currentNode, "" };
     }
 
     virtual std::string toString() const {
@@ -137,11 +142,16 @@ class CompositeSubGrammarComponent : public SubGrammarComponent {
         subGrammarComponents = new std::vector<SubGrammarComponent *> ();
     }
 
-    virtual ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+        ParserResult result = {currentNode, ""};
         for (SubGrammarComponent *nextComponent : *subGrammarComponents) {
-            currentNode = nextComponent->parse(nextCharacter, currentNode, subGrammarReferences);
+            result = nextComponent->parse(nextCharacter, currentNode, subGrammarReferences);
+            if (result.node == nullptr) {
+                break;
+            }
+            currentNode = result.node;
         }
-        return currentNode;
+        return result;
     }
 
     virtual std::string toString() const {
@@ -156,7 +166,7 @@ class CompositeSubGrammarComponent : public SubGrammarComponent {
 
 class PushSubGrammarComponent : public SubGrammarComponent {
     public:
-    ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         //create sibling node with name "["
         //create child node of that node, a text node
         //return the text node
@@ -166,7 +176,7 @@ class PushSubGrammarComponent : public SubGrammarComponent {
         //the child of that sibling is now the current node
         currentNode = currentNode->createChild("");
 
-        return currentNode;
+        return {currentNode, ""};
     }
 
     std::string toString() const {
@@ -176,10 +186,10 @@ class PushSubGrammarComponent : public SubGrammarComponent {
 
 class PopSubGrammarComponent : public SubGrammarComponent {
     public:
-    ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         currentNode->getParent()->addCharacter(nextCharacter);
         currentNode = currentNode->getParent()->getParent()->createChild("");
-        return currentNode;
+        return {currentNode, ""};
     }
 
     std::string toString() const {
@@ -187,22 +197,33 @@ class PopSubGrammarComponent : public SubGrammarComponent {
     }
 };
 
-class SwitchSubGrammarComponent : public SubGrammarComponent {
+class PushNameSubGrammarComponent : public SubGrammarComponent {
     std::string name;
 
     public:
-    SwitchSubGrammarComponent(std::string n) {
+    PushNameSubGrammarComponent(std::string n) {
         name = n;
     }
 
-    ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
-        std::cout << "parse in switch sub grammar\n";
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         subGrammarReferences->push(name);
-        return currentNode;
+        return {currentNode, ""};
     }
 
     std::string toString() const {
-        return "Pop subGrammar component";
+        return "Push name subGrammar component";
+    }
+};
+
+class PopNameSubGrammarComponent : public SubGrammarComponent {
+    public:
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+        subGrammarReferences->pop();
+        return {currentNode, ""};
+    }
+
+    std::string toString() const {
+        return "Pop name subGrammar component";
     }
 };
 
@@ -257,14 +278,13 @@ public:
         delete defaultComponent;
     }
 
-    ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         SubGrammarComponent *subGrammarComponentForCharacter = defaultComponent;
         if (componentsForCharacters->find(nextCharacter) != componentsForCharacters->end()) {
             subGrammarComponentForCharacter = (*componentsForCharacters)[nextCharacter];
         }
 
-        ParserNode *result = subGrammarComponentForCharacter->parse(nextCharacter, currentNode, subGrammarReferences);
-        return result;
+        return subGrammarComponentForCharacter->parse(nextCharacter, currentNode, subGrammarReferences);
     }
 };
 
@@ -285,23 +305,26 @@ public:
         return true;
     }
 
-    ParserNode *parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         ParserNode *nextNode = NULL;
         std::string subGrammarReference = subGrammarReferences->top();
         SubGrammarParser *subGrammarParser = (*subGrammarParsersByName)[subGrammarReference];
+        ParserResult result;
+
         if (subGrammarParser == NULL) {
-            std::cout << "could not find sub grammar for key " << subGrammarReference << "\n";
+            result = { nullptr, "could not find sub grammar for key " + subGrammarReference + "\n" };
         }
         else {
-            nextNode = subGrammarParser->parse(nextCharacter, currentNode, subGrammarReferences);
+            result = subGrammarParser->parse(nextCharacter, currentNode, subGrammarReferences);
         }
-        return nextNode;
+    
+        return result;
     }
 };
 
 int main() {
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> conv;
-    std::u32string testParse = conv.from_bytes("asdf[asdf\"[asdf[asdf]fdsa]\"fdsa]fdsa");
+    std::u32string testParse = conv.from_bytes("these brackets create an object: [object]\"these brackets don't: [object]\"wow!");
 
     SubGrammar testSubGrammar, quoteSubGrammar;
 
@@ -319,13 +342,22 @@ int main() {
     CharacterSet quote("\"");
     CompositeSubGrammarComponent quoteCompositeComponent;
     quoteCompositeComponent.addSubGrammarComponent(pushComponent);
-    SwitchSubGrammarComponent quoteSwitchComponent("quote");
-    quoteCompositeComponent.addSubGrammarComponent(quoteSwitchComponent);
+    PushNameSubGrammarComponent quoteBeginComponent("quote");
+    quoteCompositeComponent.addSubGrammarComponent(quoteBeginComponent);
     testSubGrammar.addComponent(&quote, &quoteCompositeComponent);
 
     SubGrammarParser rootParser(testSubGrammar);
     GrammarParser parser;
     parser.addSubGrammarParser("root", &rootParser);
+
+    //The only thing in quote syntax is an ending quote
+    CompositeSubGrammarComponent quoteEndCompositeComponent;
+    quoteEndCompositeComponent.addSubGrammarComponent(popComponent);
+    PopNameSubGrammarComponent quoteEndComponent;
+    quoteEndCompositeComponent.addSubGrammarComponent(quoteEndComponent);
+    quoteSubGrammar.addComponent(&quote, &quoteEndCompositeComponent);
+    SubGrammarParser quoteParser(quoteSubGrammar);
+    parser.addSubGrammarParser("quote",&quoteParser);
 
     ParserNode rootNode("root");
     rootNode.createChild("");
@@ -334,8 +366,17 @@ int main() {
     subGrammarReferences.push("root");
 
     ParserNode *currentNode = rootNode.lastChild();
+    ParserResult result;
+
     for (char32_t nextCharacter : testParse) {
-        currentNode = parser.parse(nextCharacter, currentNode, &subGrammarReferences);
+        result = parser.parse(nextCharacter, currentNode, &subGrammarReferences);
+        if (currentNode == nullptr) {
+            std::cout << "Error parsing:" << result.error << "\n";
+            break;
+        }
+        else {
+            currentNode = result.node;
+        }
     }
     
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> unConv;
