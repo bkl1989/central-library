@@ -103,7 +103,9 @@ class CharacterSet {
 public:
     virtual std::vector<char32_t> *getCharacters () {
         return nullptr;
-    }
+    };
+
+    virtual ~CharacterSet() = default;
 };
 
 class StringCharacterSet : public CharacterSet {
@@ -139,6 +141,8 @@ class SubGrammarComponent {
     virtual std::string toString() const {
         return "subgrammar component";
     }
+    
+    virtual ~SubGrammarComponent() = default;
 };
 
 class CompositeSubGrammarComponent : public SubGrammarComponent {
@@ -161,7 +165,7 @@ class CompositeSubGrammarComponent : public SubGrammarComponent {
         return result;
     }
 
-    virtual std::string toString() const {
+    std::string toString() const {
         return "Composite subgrammar Component";
     }
 
