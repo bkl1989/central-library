@@ -51,8 +51,10 @@ public:
         text = new std::u32string(1, n);
         children = new std::vector<ParserNode *> ();
     }
+    
+    ParserNode() = default;
 
-    ~ParserNode() {
+    ~ParserNode() { 
         //delete each parser node
         for (ParserNode *child : *children) {
             delete child;
@@ -106,6 +108,7 @@ public:
     };
 
     virtual ~CharacterSet() = default;
+    CharacterSet() = default;
 };
 
 class StringCharacterSet : public CharacterSet {
@@ -119,6 +122,8 @@ public:
             characters->push_back(ch);
         }
     }
+
+    StringCharacterSet() = default;
 
     ~StringCharacterSet() {
         delete characters;
@@ -142,6 +147,7 @@ class SubGrammarComponent {
         return "subgrammar component";
     }
     
+    SubGrammarComponent() = default;
     virtual ~SubGrammarComponent() = default;
 };
 
@@ -151,6 +157,10 @@ class CompositeSubGrammarComponent : public SubGrammarComponent {
     public:
     CompositeSubGrammarComponent () {
         subGrammarComponents = new std::vector<SubGrammarComponent *> ();
+    }
+
+    ~CompositeSubGrammarComponent() {
+        delete subGrammarComponents;
     }
 
     ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
@@ -193,6 +203,9 @@ class PushSubGrammarComponent : public SubGrammarComponent {
     std::string toString() const {
         return "Push subgrammar component";
     }
+
+    PushSubGrammarComponent() = default;
+    ~PushSubGrammarComponent() = default;
 };
 
 class PopSubGrammarComponent : public SubGrammarComponent {
@@ -206,12 +219,18 @@ class PopSubGrammarComponent : public SubGrammarComponent {
     std::string toString() const {
         return "Pop subgrammar component";
     }
+
+    PopSubGrammarComponent() = default;
+    ~PopSubGrammarComponent() = default;
 };
 
 class PushNameSubGrammarComponent : public SubGrammarComponent {
     std::string name;
 
-    public:
+public:
+    PushNameSubGrammarComponent() = default;
+    ~PushNameSubGrammarComponent() = default;
+
     PushNameSubGrammarComponent(std::string n) {
         name = n;
     }
@@ -228,6 +247,9 @@ class PushNameSubGrammarComponent : public SubGrammarComponent {
 
 class PopNameSubGrammarComponent : public SubGrammarComponent {
     public:
+    PopNameSubGrammarComponent() = default;
+    ~PopNameSubGrammarComponent() = default;
+
     ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         subGrammarReferences->pop();
         return {currentNode, ""};
@@ -240,6 +262,9 @@ class PopNameSubGrammarComponent : public SubGrammarComponent {
 
 class NoOpSubGrammarComponent : public SubGrammarComponent {
 public:
+    NoOpSubGrammarComponent() = default;
+    ~NoOpSubGrammarComponent() = default;
+
     ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
         return {currentNode, ""};
     }
@@ -253,6 +278,9 @@ class ErrorSubGrammarComponent : public SubGrammarComponent {
 private:
     std::string message;
 public:
+    ErrorSubGrammarComponent() = default;
+    ~ErrorSubGrammarComponent() = default;
+
     ErrorSubGrammarComponent(std::string m) {
         message = m;
     }
@@ -315,6 +343,11 @@ private:
     std::unordered_map<char32_t, SubGrammarComponent *> *componentsForCharacters;
     SubGrammarComponent *defaultComponent;
 public:
+    SubGrammarParser() {
+        componentsForCharacters = new std::unordered_map<char32_t, SubGrammarComponent *>();
+        defaultComponent = new SubGrammarComponent ();
+    }
+
     SubGrammarParser(SubGrammar &forSubGrammar) {
         componentsForCharacters = new std::unordered_map<char32_t, SubGrammarComponent *> (forSubGrammar.asUnorderedMap());
         //the "default default" behavior of the parser is the behavior of the subgrammarcomponent base class
