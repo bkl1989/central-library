@@ -14,7 +14,7 @@ GrammarParser constructJSONParser () {
     /*
     JSON Key subgrammar
     */
-    StringCharacterSet whitespace(" ");
+    StringCharacterSet whitespace(" \t\n\r");
     //should noop be default behavior, rather than having to specify it?
     NoOpSubGrammarComponent noOpComponent;
     JSONObjectSubGrammar.addComponent(&whitespace, &noOpComponent);

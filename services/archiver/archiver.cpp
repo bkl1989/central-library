@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <stack>
 #include "./parser.cpp"
+#include "./jsonParser.cpp"
 
 //this file is not finalized. this won't be the format the consumer of the SDK will use.
 int main() {
@@ -66,6 +67,27 @@ int main() {
     }
     
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> unConv;
-    std::cout << "Objects:\n" + rootNode.toString() << "\n";
+    std::cout << "Objects from first parse:\n" + rootNode.toString() << "\n";
+
+    std::u32string testJSONParse = conv.from_bytes(" \"json key\": \"json value\" ");
+    std::stack<std::string> JSONSubGrammarReferences;
+    JSONSubGrammarReferences.push("json.key");
+    //i know... this isn't how it's going to work long-term
+    GrammarParser JSONParser = constructJSONParser();
+    ParserNode JSONRootNode("{}");
+    JSONRootNode.createChild("");
+    currentNode = JSONRootNode.lastChild();
+
+    for (char32_t nextCharacter : testJSONParse) {
+        result = JSONParser.parse(nextCharacter, currentNode, &JSONSubGrammarReferences);
+        if (currentNode == nullptr) {
+            std::cout << "Error parsing JSON:" << result.error << "\n";
+            break;
+        }
+        else {
+            currentNode = result.node;
+        }
+    }
+
     return 0;
 }
