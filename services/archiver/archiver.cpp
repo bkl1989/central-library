@@ -55,8 +55,8 @@ int main() {
     ParserNode *currentNode = rootNode.lastChild();
     ParserResult result;
 
-    for (char32_t nextCharacter : testParse) {
-        result = parser.parse(nextCharacter, currentNode, &subGrammarReferences);
+    for (int index = 0; index < testParse.size(); ++index) {
+        result = parser.parse(testParse.data(), index, currentNode, &subGrammarReferences);
         currentNode = result.node;
         if (currentNode == nullptr) {
             std::cout << "Error parsing:" << result.error << "\n";
@@ -77,8 +77,8 @@ int main() {
     JSONRootNode.createChild("");
     currentNode = JSONRootNode.lastChild();
 
-    for (char32_t nextCharacter : testJSONParse) {
-        result = testJSONParser->parse(nextCharacter, currentNode, &JSONSubGrammarReferences);
+    for (int index = 0; index < testJSONParse.size(); ++index) {
+        result = testJSONParser->parse(testJSONParse.data(), index, currentNode, &JSONSubGrammarReferences);
         currentNode = result.node;
         if (currentNode == nullptr) {
             std::cout << "Error parsing JSON:" << result.error << "\n";

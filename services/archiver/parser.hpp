@@ -7,6 +7,7 @@
 #include <codecvt>
 #include <locale>
 #include <unordered_map>
+#include <unordered_set>
 #include <stack>
 
 std::string char32ToUtf8(char32_t ch);
@@ -55,7 +56,7 @@ public:
 
 class SubGrammarComponent {
     public:
-    virtual ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    virtual ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     virtual std::string toString() const;
     SubGrammarComponent();
     virtual ~SubGrammarComponent();
@@ -66,14 +67,14 @@ class CompositeSubGrammarComponent : public SubGrammarComponent {
 public:
     CompositeSubGrammarComponent ();
     ~CompositeSubGrammarComponent ();
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
     bool addSubGrammarComponent (SubGrammarComponent &componentToAdd);
 };
 
 class PushSubGrammarComponent : public SubGrammarComponent {
 public:
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
     PushSubGrammarComponent();
     ~PushSubGrammarComponent();
@@ -81,7 +82,7 @@ public:
 
 class PopSubGrammarComponent : public SubGrammarComponent {
 public:
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
     PopSubGrammarComponent();
     ~PopSubGrammarComponent();
@@ -93,15 +94,28 @@ public:
     PushNameSubGrammarComponent();
     ~PushNameSubGrammarComponent();
     PushNameSubGrammarComponent(std::string n);
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
+};
+
+class UnlessEscapedSubGrammarComponent : public SubGrammarComponent {
+    SubGrammarComponent *component, *escapedComponent;
+    std::unordered_set<char32_t> *escapeCharacters;
+public:
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    std::string toString() const;
+    UnlessEscapedSubGrammarComponent(const std::string& str);
+    UnlessEscapedSubGrammarComponent();
+    ~UnlessEscapedSubGrammarComponent();
+    bool setSubGrammarComponent (SubGrammarComponent &componentToAdd);
+    bool setEscapedSubGrammarComponent (SubGrammarComponent &componentToAdd);
 };
 
 class PopNameSubGrammarComponent : public SubGrammarComponent {
     public:
     PopNameSubGrammarComponent();
     ~PopNameSubGrammarComponent();
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
 };
 
@@ -109,7 +123,7 @@ class NoOpSubGrammarComponent : public SubGrammarComponent {
 public:
     NoOpSubGrammarComponent();
     ~NoOpSubGrammarComponent();
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
 };
 
@@ -120,7 +134,7 @@ public:
     ErrorSubGrammarComponent();
     ~ErrorSubGrammarComponent();
     ErrorSubGrammarComponent(std::string m);
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
 };
 
@@ -146,7 +160,7 @@ public:
     SubGrammarParser();
     SubGrammarParser(SubGrammar &forSubGrammar);
     ~SubGrammarParser();
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
 };
 
 class GrammarParser {
@@ -156,7 +170,7 @@ public:
     GrammarParser();
     virtual ~GrammarParser();
     bool addSubGrammarParser (std::string name, SubGrammarParser *parser);
-    ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
 };
 
 #endif

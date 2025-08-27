@@ -46,6 +46,7 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "unordered_set": "cpp"
     }
 }

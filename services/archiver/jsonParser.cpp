@@ -32,6 +32,28 @@ JSONParser::JSONParser () {
     JSONValueCompositeComponent->addSubGrammarComponent(*beginValueComponent);
     JSONObjectSubGrammar->addComponent(colon, JSONValueCompositeComponent);
 
+    /*
+    JSON String subgrammar
+    */
+
+    //quotes (unless escaped with a preceding backslash)
+
+    //Pops name and 
+    CompositeSubGrammarComponent *stringEndCompositeComponent = new CompositeSubGrammarComponent();
+    PopNameSubGrammarComponent *endStringComponent = new PopNameSubGrammarComponent();
+    stringEndCompositeComponent->addSubGrammarComponent(*endStringComponent);
+
+    SubGrammarComponent *writeComponent = new SubGrammarComponent();
+    UnlessEscapedSubGrammarComponent *quoteUnlessEscapedComponent = new UnlessEscapedSubGrammarComponent("\"");
+    quoteUnlessEscapedComponent->addEscapeSubGrammarComponent(*writeComponent);
+    quoteUnlessEscapedComponent->addSubGrammarComponent(*stringEndCompositeComponent);
+
+    //unescaped newlines give an error
+    StringCharacterSet *
+
+    /*
+    JSON parser defaults to an error. It's defined by inclusion
+    */
     ErrorSubGrammarComponent *errorComponent = new ErrorSubGrammarComponent("Invalid character in JSON Key expression");
     JSONObjectSubGrammar->setDefaultComponent(*errorComponent);
 
