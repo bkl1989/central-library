@@ -2,43 +2,44 @@
 #include "parser.hpp"
 
 //this file is not finalized. this won't be the format the consumer of the SDK will use.
-GrammarParser constructJSONParser () {
-    GrammarParser JSONParser;
-
+JSONParser::JSONParser () {
     SubGrammar
-        JSONObjectSubGrammar,
-        JSONOValueSubGrammar,
-        JSONArraySubGrammar,
-        JSONStringSubGrammar;
+        *JSONObjectSubGrammar = new SubGrammar(),
+        *JSONOValueSubGrammar = new SubGrammar(),
+        *JSONArraySubGrammar = new SubGrammar(),
+        *JSONStringSubGrammar = new SubGrammar();
 
 
     /*
     JSON Key subgrammar
     */
-    StringCharacterSet whitespace(" \t\n\r");
+    StringCharacterSet *whitespace = new StringCharacterSet(" \t\n\r");
     //should noop be default behavior, rather than having to specify it?
-    NoOpSubGrammarComponent noOpComponent;
-    JSONObjectSubGrammar.addComponent(&whitespace, &noOpComponent);
+    NoOpSubGrammarComponent *noOpComponent = new NoOpSubGrammarComponent();
+    JSONObjectSubGrammar->addComponent(whitespace, noOpComponent);
 
-    StringCharacterSet quote("\"");
-    CompositeSubGrammarComponent quoteCompositeComponent;
-    quoteCompositeComponent.addSubGrammarComponent(noOpComponent);
-    PushNameSubGrammarComponent beginStringComponent("JSON.string");
-    quoteCompositeComponent.addSubGrammarComponent(beginStringComponent);
-    JSONObjectSubGrammar.addComponent(&quote, &quoteCompositeComponent);
+    StringCharacterSet *quote = new StringCharacterSet("\"");
+    CompositeSubGrammarComponent *quoteCompositeComponent = new CompositeSubGrammarComponent();
+    quoteCompositeComponent->addSubGrammarComponent(*noOpComponent);
+    PushNameSubGrammarComponent *beginStringComponent = new PushNameSubGrammarComponent("JSON.string");
+    quoteCompositeComponent->addSubGrammarComponent(*beginStringComponent);
+    JSONObjectSubGrammar->addComponent(quote, quoteCompositeComponent);
 
-    StringCharacterSet colon(":");
-    CompositeSubGrammarComponent JSONValueCompositeComponent;
-    JSONValueCompositeComponent.addSubGrammarComponent(noOpComponent);
-    PushNameSubGrammarComponent beginValueComponent("JSON.value");
-    JSONValueCompositeComponent.addSubGrammarComponent(beginValueComponent);
-    JSONObjectSubGrammar.addComponent(&colon, &JSONValueCompositeComponent);
+    StringCharacterSet *colon = new StringCharacterSet(":");
+    CompositeSubGrammarComponent *JSONValueCompositeComponent = new CompositeSubGrammarComponent();
+    JSONValueCompositeComponent->addSubGrammarComponent(*noOpComponent);
+    PushNameSubGrammarComponent *beginValueComponent = new PushNameSubGrammarComponent("JSON.value");
+    JSONValueCompositeComponent->addSubGrammarComponent(*beginValueComponent);
+    JSONObjectSubGrammar->addComponent(colon, JSONValueCompositeComponent);
 
-    ErrorSubGrammarComponent errorComponent("Invalid character in JSON Key expression");
-    JSONObjectSubGrammar.setDefaultComponent(errorComponent);
+    ErrorSubGrammarComponent *errorComponent = new ErrorSubGrammarComponent("Invalid character in JSON Key expression");
+    JSONObjectSubGrammar->setDefaultComponent(*errorComponent);
 
-    SubGrammarParser JSONObjectKeySubGrammarParser(JSONObjectSubGrammar);
-    JSONParser.addSubGrammarParser("JSON.key", &JSONObjectKeySubGrammarParser);
+    SubGrammarParser *JSONObjectSubGrammarParser = new SubGrammarParser(*JSONObjectSubGrammar);
+    addSubGrammarParser("JSON", JSONObjectSubGrammarParser);
+}
 
-    return JSONParser;
+JSONParser::~JSONParser() {
+    //Any variable declared inside the above constructor should be moved to the header and destroyed here
+    //But I have to figure out if I'm settling for this memory management system
 }

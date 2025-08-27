@@ -1,5 +1,5 @@
-#ifndef CL_PARSER_PARSER_PARSER_HPP
-#define CL_PARSER_PARSER_PARSER_HPP
+#ifndef CL_PARSER_PARSER_HPP
+#define CL_PARSER_PARSER_HPP
 
 #include <iostream>
 #include <string>
@@ -154,7 +154,7 @@ private:
     std::unordered_map<std::string, SubGrammarParser *> *subGrammarParsersByName;
 public:
     GrammarParser();
-    ~GrammarParser();
+    virtual ~GrammarParser();
     bool addSubGrammarParser (std::string name, SubGrammarParser *parser);
     ParserResult parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
 };

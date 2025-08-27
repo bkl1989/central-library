@@ -302,11 +302,11 @@ SubGrammarParser::SubGrammarParser(SubGrammar &forSubGrammar) {
 
 SubGrammarParser::~SubGrammarParser() {
     delete componentsForCharacters;
-    delete defaultComponent;
 }
 
 ParserResult SubGrammarParser::parse (char32_t nextCharacter, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
     SubGrammarComponent *subGrammarComponentForCharacter = defaultComponent;
+
     if (componentsForCharacters->find(nextCharacter) != componentsForCharacters->end()) {
         subGrammarComponentForCharacter = (*componentsForCharacters)[nextCharacter];
     }
@@ -334,7 +334,7 @@ ParserResult GrammarParser::parse (char32_t nextCharacter, ParserNode *currentNo
     ParserResult result;
 
     if (subGrammarParser == NULL) {
-        result = { nullptr, "could not find sub grammar for key " + subGrammarReference + "\n" };
+        result = { nullptr, "could not find subgrammar for key " + subGrammarReference + "\n" };
     }
     else {
         result = subGrammarParser->parse(nextCharacter, currentNode, subGrammarReferences);

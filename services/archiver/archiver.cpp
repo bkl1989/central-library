@@ -57,12 +57,10 @@ int main() {
 
     for (char32_t nextCharacter : testParse) {
         result = parser.parse(nextCharacter, currentNode, &subGrammarReferences);
+        currentNode = result.node;
         if (currentNode == nullptr) {
             std::cout << "Error parsing:" << result.error << "\n";
             break;
-        }
-        else {
-            currentNode = result.node;
         }
     }
     
@@ -71,23 +69,24 @@ int main() {
 
     std::u32string testJSONParse = conv.from_bytes(" \"json key\": \"json value\" ");
     std::stack<std::string> JSONSubGrammarReferences;
-    JSONSubGrammarReferences.push("json.key");
+    JSONSubGrammarReferences.push("JSON");
+    
     //i know... this isn't how it's going to work long-term
-    GrammarParser JSONParser = constructJSONParser();
+    JSONParser *testJSONParser = new JSONParser ();
     ParserNode JSONRootNode("{}");
     JSONRootNode.createChild("");
     currentNode = JSONRootNode.lastChild();
 
     for (char32_t nextCharacter : testJSONParse) {
-        result = JSONParser.parse(nextCharacter, currentNode, &JSONSubGrammarReferences);
+        result = testJSONParser->parse(nextCharacter, currentNode, &JSONSubGrammarReferences);
+        currentNode = result.node;
         if (currentNode == nullptr) {
             std::cout << "Error parsing JSON:" << result.error << "\n";
             break;
         }
-        else {
-            currentNode = result.node;
-        }
     }
+
+    std::cout << "JSON node structure: " << JSONRootNode.toString() << "\n";
 
     return 0;
 }
