@@ -30,7 +30,9 @@ public:
     ParserNode *createChild (char32_t n);
     bool addCharacter (char32_t characterToAdd);
     ParserNode *lastChild ();
+    ParserNode *getChild (int index);
     std::u32string getValue ();
+    size_t size();
 };
 
 struct ParserResult {
@@ -70,6 +72,22 @@ public:
     ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
     std::string toString() const;
     bool addSubGrammarComponent (SubGrammarComponent &componentToAdd);
+};
+
+class NoSiblingsSubGrammarComponent : public SubGrammarComponent {
+public:
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    std::string toString() const;
+    NoSiblingsSubGrammarComponent();
+    ~NoSiblingsSubGrammarComponent();
+};
+
+class NewSiblingSubGrammarComponent : public SubGrammarComponent {
+public:
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    std::string toString() const;
+    NewSiblingSubGrammarComponent();
+    ~NewSiblingSubGrammarComponent();
 };
 
 class PushSubGrammarComponent : public SubGrammarComponent {

@@ -5,10 +5,11 @@
 JSONParser::JSONParser () {
     SubGrammar
         *JSONObjectSubGrammar = new SubGrammar(),
-        *JSONOValueSubGrammar = new SubGrammar(),
+        *JSONValueSubGrammar = new SubGrammar(),
         *JSONArraySubGrammar = new SubGrammar(),
         *JSONStringSubGrammar = new SubGrammar();
 
+    PushSubGrammarComponent *PushComponent = new PushSubGrammarComponent ();
 
     /*
     JSON Key subgrammar
@@ -20,9 +21,10 @@ JSONParser::JSONParser () {
 
     StringCharacterSet *quote = new StringCharacterSet("\"");
     CompositeSubGrammarComponent *quoteCompositeComponent = new CompositeSubGrammarComponent();
-    quoteCompositeComponent->addSubGrammarComponent(*noOpComponent);
     PushNameSubGrammarComponent *beginStringComponent = new PushNameSubGrammarComponent("JSON.string");
     quoteCompositeComponent->addSubGrammarComponent(*beginStringComponent);
+    NoSiblingsSubGrammarComponent *noSiblingsComponent = new NoSiblingsSubGrammarComponent();
+    quoteCompositeComponent->addSubGrammarComponent(*noSiblingsComponent);
     JSONObjectSubGrammar->addComponent(quote, quoteCompositeComponent);
 
     StringCharacterSet *colon = new StringCharacterSet(":");
@@ -30,6 +32,7 @@ JSONParser::JSONParser () {
     JSONValueCompositeComponent->addSubGrammarComponent(*noOpComponent);
     PushNameSubGrammarComponent *beginValueComponent = new PushNameSubGrammarComponent("JSON.value");
     JSONValueCompositeComponent->addSubGrammarComponent(*beginValueComponent);
+    JSONValueCompositeComponent->addSubGrammarComponent(*PushComponent);
     JSONObjectSubGrammar->addComponent(colon, JSONValueCompositeComponent);
 
     /*
@@ -39,18 +42,57 @@ JSONParser::JSONParser () {
     //quotes (unless escaped with a preceding backslash)
 
     //Pops name and 
+
     CompositeSubGrammarComponent *stringEndCompositeComponent = new CompositeSubGrammarComponent();
     PopNameSubGrammarComponent *endStringComponent = new PopNameSubGrammarComponent();
     stringEndCompositeComponent->addSubGrammarComponent(*endStringComponent);
+    NewSiblingSubGrammarComponent *newSiblingComponent = new NewSiblingSubGrammarComponent ();
+    stringEndCompositeComponent->addSubGrammarComponent(*newSiblingComponent);
 
     SubGrammarComponent *writeComponent = new SubGrammarComponent();
-    UnlessEscapedSubGrammarComponent *quoteUnlessEscapedComponent = new UnlessEscapedSubGrammarComponent("\"");
-    quoteUnlessEscapedComponent->addEscapeSubGrammarComponent(*writeComponent);
-    quoteUnlessEscapedComponent->addSubGrammarComponent(*stringEndCompositeComponent);
+    UnlessEscapedSubGrammarComponent *quoteUnlessEscapedComponent = new UnlessEscapedSubGrammarComponent("\\");
+    quoteUnlessEscapedComponent->setEscapedSubGrammarComponent(*writeComponent);
+    quoteUnlessEscapedComponent->setSubGrammarComponent(*stringEndCompositeComponent);
+    JSONStringSubGrammar->addComponent(quote, quoteUnlessEscapedComponent);
 
     //unescaped newlines give an error
-    StringCharacterSet *
+    StringCharacterSet *newline = new StringCharacterSet("\r\n");
+    ErrorSubGrammarComponent *newlineInJSONStringError = new ErrorSubGrammarComponent("Newline found in JSON string");
+    JSONStringSubGrammar->addComponent(newline, newlineInJSONStringError);
 
+    SubGrammarParser *JSONStringSubGrammarParser = new SubGrammarParser(*JSONStringSubGrammar);
+    addSubGrammarParser("JSON.string", JSONStringSubGrammarParser);
+
+    /*
+    * JSON Value subgrammar
+    */
+
+    //Open bracket { pushes a json object grammar
+    StringCharacterSet *openCurlyBrace = new StringCharacterSet("{");
+    CompositeSubGrammarComponent *JSONObjectGrammarComposite = new CompositeSubGrammarComponent();
+    PushNameSubGrammarComponent *PushJSONGrammarComponent = new PushNameSubGrammarComponent("JSON");
+    JSONObjectGrammarComposite->addSubGrammarComponent(*PushJSONGrammarComponent);
+    JSONObjectGrammarComposite->addSubGrammarComponent(*PushComponent);
+    JSONValueSubGrammar->addComponent(openCurlyBrace, JSONObjectGrammarComposite);
+    //Open bracket [ pushes a json array grammar
+    StringCharacterSet *openBracket = new StringCharacterSet("[");
+    CompositeSubGrammarComponent *JSONArrayGrammarComposite = new CompositeSubGrammarComponent();
+    PushNameSubGrammarComponent *PushJSONArrayGrammarComponent = new PushNameSubGrammarComponent("JSON.array");
+    JSONArrayGrammarComposite->addSubGrammarComponent(*PushJSONArrayGrammarComponent);
+    JSONArrayGrammarComposite->addSubGrammarComponent(*PushComponent);
+    JSONValueSubGrammar->addComponent(openBracket, JSONArrayGrammarComposite);
+
+    //Open quote pushes a json string
+        //StringCharacterSet *quote defined
+    //Any number starts a number grammar
+    StringCharacterSet *numberCharacterSet = new StringCharacterSet("0123456789"); 
+    PushNameSubGrammarComponent *PushJSONNumberGrammarComponent = new PushNameSubGrammarComponent("JSON.number");
+    JSONValueSubGrammar->addComponent(numberCharacterSet, PushJSONNumberGrammarComponent);
+
+    SubGrammarParser *JSONValueSubGrammarParser = new SubGrammarParser (*JSONValueSubGrammar);
+    addSubGrammarParser("JSON.value", JSONValueSubGrammarParser);
+    //Whitespace is ignored
+        //StringCharacterSet *whitespace defined
     /*
     JSON parser defaults to an error. It's defined by inclusion
     */
