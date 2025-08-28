@@ -237,7 +237,7 @@ PushSubGrammarComponent::~PushSubGrammarComponent() = default;
 ParserResult PopSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
     char32_t nextCharacter = characters[index];
     currentNode->getParent()->addCharacter(nextCharacter);
-    currentNode = currentNode->getParent()->getParent()->createChild("");
+    currentNode = currentNode->getParent()->getParent()->lastChild();
     return {currentNode, ""};
 }
 
