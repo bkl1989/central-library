@@ -9,7 +9,7 @@ JSONParser::JSONParser () {
         *JSONArraySubGrammar = new SubGrammar(),
         *JSONStringSubGrammar = new SubGrammar();
 
-    PushSubGrammarComponent *PushComponent = new PushSubGrammarComponent ();
+    PushSubGrammarComponent *pushComponent = new PushSubGrammarComponent ();
 
     /*
     JSON Key subgrammar
@@ -32,7 +32,7 @@ JSONParser::JSONParser () {
     JSONValueCompositeComponent->addSubGrammarComponent(*noOpComponent);
     PushNameSubGrammarComponent *beginValueComponent = new PushNameSubGrammarComponent("JSON.value");
     JSONValueCompositeComponent->addSubGrammarComponent(*beginValueComponent);
-    JSONValueCompositeComponent->addSubGrammarComponent(*PushComponent);
+    JSONValueCompositeComponent->addSubGrammarComponent(*pushComponent);
     JSONObjectSubGrammar->addComponent(colon, JSONValueCompositeComponent);
 
     /*
@@ -46,8 +46,8 @@ JSONParser::JSONParser () {
     CompositeSubGrammarComponent *stringEndCompositeComponent = new CompositeSubGrammarComponent();
     PopNameSubGrammarComponent *endStringComponent = new PopNameSubGrammarComponent();
     stringEndCompositeComponent->addSubGrammarComponent(*endStringComponent);
-    NewSiblingSubGrammarComponent *newSiblingComponent = new NewSiblingSubGrammarComponent ();
-    stringEndCompositeComponent->addSubGrammarComponent(*newSiblingComponent);
+    // NewSiblingSubGrammarComponent *newSiblingComponent = new NewSiblingSubGrammarComponent ();
+    // stringEndCompositeComponent->addSubGrammarComponent(*newSiblingComponent);
 
     SubGrammarComponent *writeComponent = new SubGrammarComponent();
     UnlessEscapedSubGrammarComponent *quoteUnlessEscapedComponent = new UnlessEscapedSubGrammarComponent("\\");
@@ -72,18 +72,19 @@ JSONParser::JSONParser () {
     CompositeSubGrammarComponent *JSONObjectGrammarComposite = new CompositeSubGrammarComponent();
     PushNameSubGrammarComponent *PushJSONGrammarComponent = new PushNameSubGrammarComponent("JSON");
     JSONObjectGrammarComposite->addSubGrammarComponent(*PushJSONGrammarComponent);
-    JSONObjectGrammarComposite->addSubGrammarComponent(*PushComponent);
+    JSONObjectGrammarComposite->addSubGrammarComponent(*pushComponent);
     JSONValueSubGrammar->addComponent(openCurlyBrace, JSONObjectGrammarComposite);
     //Open bracket [ pushes a json array grammar
     StringCharacterSet *openBracket = new StringCharacterSet("[");
     CompositeSubGrammarComponent *JSONArrayGrammarComposite = new CompositeSubGrammarComponent();
-    PushNameSubGrammarComponent *PushJSONArrayGrammarComponent = new PushNameSubGrammarComponent("JSON.array");
-    JSONArrayGrammarComposite->addSubGrammarComponent(*PushJSONArrayGrammarComponent);
-    JSONArrayGrammarComposite->addSubGrammarComponent(*PushComponent);
+    PushNameSubGrammarComponent *pushJSONArrayGrammarComponent = new PushNameSubGrammarComponent("JSON.array");
+    JSONArrayGrammarComposite->addSubGrammarComponent(*pushJSONArrayGrammarComponent);
+    JSONArrayGrammarComposite->addSubGrammarComponent(*pushComponent);
     JSONValueSubGrammar->addComponent(openBracket, JSONArrayGrammarComposite);
 
     //Open quote pushes a json string
         //StringCharacterSet *quote defined
+    JSONValueSubGrammar->addComponent(quote, quoteCompositeComponent);
     //Any number starts a number grammar
     StringCharacterSet *numberCharacterSet = new StringCharacterSet("0123456789"); 
     PushNameSubGrammarComponent *PushJSONNumberGrammarComponent = new PushNameSubGrammarComponent("JSON.number");

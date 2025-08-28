@@ -220,7 +220,6 @@ ParserResult PushSubGrammarComponent::parse (char32_t *characters, int index, Pa
 
     //create sibling with the character invoking the push
     char32_t nextCharacter = characters[index];
-    currentNode = currentNode->getParent()->createChild(nextCharacter);
     //the child of that sibling is now the current node
     currentNode = currentNode->createChild("");
 
