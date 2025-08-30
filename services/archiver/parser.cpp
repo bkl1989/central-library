@@ -181,7 +181,6 @@ ParserResult NewSiblingSubGrammarComponent::parse (char32_t *characters, int ind
     //create new sibling
     return { currentNode->getParent()->createChild(""), "" };
 }
-
 std::string NewSiblingSubGrammarComponent::toString() const {
     return "New sibling sub grammar component";
 }
@@ -190,14 +189,38 @@ NewSiblingSubGrammarComponent::NewSiblingSubGrammarComponent() = default;
 NewSiblingSubGrammarComponent::~NewSiblingSubGrammarComponent() = default;
 
 /*
+* No empty siblings subgrammar component
+*/
+
+ParserResult NoEmptySiblingsSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult result = {currentNode, ""};
+    char32_t currentCharacter = characters[index];
+    
+    if (currentNode->getParent()->size() > 1 && currentNode->getParent()->getChild(-2)->getValue() == U"") {
+        std::string siblingName = U32StringToString(currentNode->getParent()->getChild(-2)->getValue());
+        result = {nullptr, "Character "+char32ToUtf8(currentCharacter)+" cannot have empty siblings, but has sibling \"" + siblingName + "\""};
+    }
+    return result;
+}
+
+std::string NoEmptySiblingsSubGrammarComponent::toString() const {
+    return "No siblings sub grammar component";
+}
+
+NoEmptySiblingsSubGrammarComponent::NoEmptySiblingsSubGrammarComponent() = default;
+NoEmptySiblingsSubGrammarComponent::~NoEmptySiblingsSubGrammarComponent() = default;
+
+/*
 * No siblings subgrammar component
 */
 
 ParserResult NoSiblingsSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
     ParserResult result = {currentNode, ""};
+    char32_t currentCharacter = characters[index];
+
     if (currentNode->getParent()->size() > 1) {
         std::string siblingName = U32StringToString(currentNode->getParent()->getChild(-2)->getValue());
-        result = {nullptr, "Character cannot have siblings, but has sibling \"" + siblingName + "\""};
+        result = {nullptr, "Character "+char32ToUtf8(currentCharacter)+" cannot have siblings, but has sibling \"" + siblingName + "\""};
     }
     return result;
 }
@@ -208,6 +231,25 @@ std::string NoSiblingsSubGrammarComponent::toString() const {
 
 NoSiblingsSubGrammarComponent::NoSiblingsSubGrammarComponent() = default;
 NoSiblingsSubGrammarComponent::~NoSiblingsSubGrammarComponent() = default;
+
+/*
+* No empty value subgrammar component
+*/
+
+ParserResult NoEmptyValueSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
+    ParserResult result = {currentNode, ""};
+    if (currentNode->getValue() == U"") {
+        result = {nullptr, "Current node must have a value before this token is parsed"};
+    }
+    return result;
+}
+
+std::string NoEmptyValueSubGrammarComponent::toString() const {
+    return "No empty valus sub grammar component";
+}
+
+NoEmptyValueSubGrammarComponent::NoEmptyValueSubGrammarComponent() = default;
+NoEmptyValueSubGrammarComponent::~NoEmptyValueSubGrammarComponent() = default;
 
 /*
 * Push Subgrammar component
@@ -235,7 +277,6 @@ PushSubGrammarComponent::~PushSubGrammarComponent() = default;
 
 ParserResult PopSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
     char32_t nextCharacter = characters[index];
-    currentNode->getParent()->addCharacter(nextCharacter);
     currentNode = currentNode->getParent()->getParent()->lastChild();
     return {currentNode, ""};
 }

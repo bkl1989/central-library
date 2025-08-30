@@ -82,6 +82,23 @@ public:
     ~NoSiblingsSubGrammarComponent();
 };
 
+
+class NoEmptySiblingsSubGrammarComponent : public SubGrammarComponent {
+public:
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    std::string toString() const;
+    NoEmptySiblingsSubGrammarComponent();
+    ~NoEmptySiblingsSubGrammarComponent();
+};
+
+class NoEmptyValueSubGrammarComponent : public SubGrammarComponent {
+public:
+    ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);
+    std::string toString() const;
+    NoEmptyValueSubGrammarComponent();
+    ~NoEmptyValueSubGrammarComponent();
+};
+
 class NewSiblingSubGrammarComponent : public SubGrammarComponent {
 public:
     ParserResult parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences);

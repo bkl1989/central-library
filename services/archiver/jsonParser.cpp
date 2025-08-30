@@ -23,8 +23,8 @@ JSONParser::JSONParser () {
     CompositeSubGrammarComponent *quoteCompositeComponent = new CompositeSubGrammarComponent();
     PushNameSubGrammarComponent *beginStringComponent = new PushNameSubGrammarComponent("JSON.string");
     quoteCompositeComponent->addSubGrammarComponent(*beginStringComponent);
-    NoSiblingsSubGrammarComponent *noSiblingsComponent = new NoSiblingsSubGrammarComponent();
-    quoteCompositeComponent->addSubGrammarComponent(*noSiblingsComponent);
+    NoEmptySiblingsSubGrammarComponent *noEmptySiblingsComponent = new NoEmptySiblingsSubGrammarComponent();
+    quoteCompositeComponent->addSubGrammarComponent(*noEmptySiblingsComponent);
     JSONObjectSubGrammar->addComponent(quote, quoteCompositeComponent);
 
     StringCharacterSet *colon = new StringCharacterSet(":");
@@ -89,6 +89,24 @@ JSONParser::JSONParser () {
     StringCharacterSet *numberCharacterSet = new StringCharacterSet("0123456789"); 
     PushNameSubGrammarComponent *PushJSONNumberGrammarComponent = new PushNameSubGrammarComponent("JSON.number");
     JSONValueSubGrammar->addComponent(numberCharacterSet, PushJSONNumberGrammarComponent);
+
+    //Comma pops object and grammar
+    StringCharacterSet *comma = new StringCharacterSet(",");
+    CompositeSubGrammarComponent *JSONValueTerminatorComposite = new CompositeSubGrammarComponent ();
+    //errors out if it occurs before a value is present
+    //so if the current child is blank
+    NoEmptyValueSubGrammarComponent *noEmptyValueComponent = new NoEmptyValueSubGrammarComponent();
+    JSONValueTerminatorComposite->addSubGrammarComponent(*noEmptyValueComponent);
+    JSONValueSubGrammar->addComponent(comma, JSONValueTerminatorComposite);
+    //pops object
+    PopSubGrammarComponent *popComponent = new PopSubGrammarComponent();
+    JSONValueTerminatorComposite->addSubGrammarComponent(*popComponent);
+    //pops name
+    PopNameSubGrammarComponent *popNameComponent = new PopNameSubGrammarComponent();
+    JSONValueTerminatorComposite->addSubGrammarComponent(*popNameComponent);
+    //creates new sibling
+    NewSiblingSubGrammarComponent *newSiblingComponent = new NewSiblingSubGrammarComponent();
+    JSONValueTerminatorComposite->addSubGrammarComponent(*newSiblingComponent);
 
     SubGrammarParser *JSONValueSubGrammarParser = new SubGrammarParser (*JSONValueSubGrammar);
     addSubGrammarParser("JSON.value", JSONValueSubGrammarParser);
