@@ -68,6 +68,7 @@ int main() {
     std::cout << "Objects from first parse:\n" + rootNode.toString() << "\n";
 
     std::u32string testJSONParse = conv.from_bytes("\
+         \"json array 1\" : [\"a\",\"b\"] \
          \"json key\" : \"json value\" , \
          \"json key 2\" : \"json value 2\", \
          \"json object 1\":{\"json object 3\":{\"json key 3\" : \"json value 3\"}},\
