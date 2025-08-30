@@ -179,6 +179,7 @@ bool CompositeSubGrammarComponent::addSubGrammarComponent (SubGrammarComponent &
 ParserResult NewSiblingSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
     ParserResult result = {currentNode, ""};
     //create new sibling
+    std::cout << "Current node at new sibling " << U32StringToString(currentNode->getValue()) << "\n";
     return { currentNode->getParent()->createChild(""), "" };
 }
 std::string NewSiblingSubGrammarComponent::toString() const {
@@ -277,7 +278,7 @@ PushSubGrammarComponent::~PushSubGrammarComponent() = default;
 
 ParserResult PopSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
     char32_t nextCharacter = characters[index];
-    currentNode = currentNode->getParent()->getParent()->lastChild();
+    currentNode = currentNode->getParent();
     return {currentNode, ""};
 }
 
@@ -383,7 +384,8 @@ ErrorSubGrammarComponent::ErrorSubGrammarComponent(std::string m) {
 }
 
 ParserResult ErrorSubGrammarComponent::parse (char32_t *characters, int index, ParserNode *currentNode, std::stack<std::string> *subGrammarReferences) {
-    return {nullptr, "Error: "+message };
+    char32_t character = characters[index];
+    return {nullptr, "Error: "+message+"\nWith character "+char32ToUtf8(character)+"\nAnd node: "+U32StringToString(currentNode->getValue())+"\nAnd and subgrammar: "+subGrammarReferences->top() };
 }
 
 std::string ErrorSubGrammarComponent::toString() const {

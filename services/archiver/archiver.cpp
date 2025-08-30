@@ -67,7 +67,11 @@ int main() {
     std::wstring_convert<std::codecvt_utf8<char32_t>, char32_t> unConv;
     std::cout << "Objects from first parse:\n" + rootNode.toString() << "\n";
 
-    std::u32string testJSONParse = conv.from_bytes(" \"json key\" : \"json value\" , \"json key 2\" : \"json value 2\" ");
+    std::u32string testJSONParse = conv.from_bytes("\
+         \"json key\" : \"json value\" , \
+         \"json key 2\" : \"json value 2\", \
+         \"json object 1\":{\"json object 3\":{\"json key 3\" : \"json value 3\"}},\
+         \"json object 2\":{\"json key 4\":\"json value 4\"}");
     std::stack<std::string> JSONSubGrammarReferences;
     JSONSubGrammarReferences.push("JSON");
     

@@ -10,6 +10,8 @@ JSONParser::JSONParser () {
         *JSONStringSubGrammar = new SubGrammar();
 
     PushSubGrammarComponent *pushComponent = new PushSubGrammarComponent ();
+    PopSubGrammarComponent *popComponent = new PopSubGrammarComponent();
+    PopNameSubGrammarComponent *popNameComponent = new PopNameSubGrammarComponent();
 
     /*
     JSON Key subgrammar
@@ -34,7 +36,6 @@ JSONParser::JSONParser () {
     JSONValueCompositeComponent->addSubGrammarComponent(*beginValueComponent);
     JSONValueCompositeComponent->addSubGrammarComponent(*pushComponent);
     JSONObjectSubGrammar->addComponent(colon, JSONValueCompositeComponent);
-
     /*
     JSON String subgrammar
     */
@@ -72,7 +73,6 @@ JSONParser::JSONParser () {
     CompositeSubGrammarComponent *JSONObjectGrammarComposite = new CompositeSubGrammarComponent();
     PushNameSubGrammarComponent *PushJSONGrammarComponent = new PushNameSubGrammarComponent("JSON");
     JSONObjectGrammarComposite->addSubGrammarComponent(*PushJSONGrammarComponent);
-    JSONObjectGrammarComposite->addSubGrammarComponent(*pushComponent);
     JSONValueSubGrammar->addComponent(openCurlyBrace, JSONObjectGrammarComposite);
     //Open bracket [ pushes a json array grammar
     StringCharacterSet *openBracket = new StringCharacterSet("[");
@@ -99,14 +99,21 @@ JSONParser::JSONParser () {
     JSONValueTerminatorComposite->addSubGrammarComponent(*noEmptyValueComponent);
     JSONValueSubGrammar->addComponent(comma, JSONValueTerminatorComposite);
     //pops object
-    PopSubGrammarComponent *popComponent = new PopSubGrammarComponent();
     JSONValueTerminatorComposite->addSubGrammarComponent(*popComponent);
     //pops name
-    PopNameSubGrammarComponent *popNameComponent = new PopNameSubGrammarComponent();
     JSONValueTerminatorComposite->addSubGrammarComponent(*popNameComponent);
     //creates new sibling
     NewSiblingSubGrammarComponent *newSiblingComponent = new NewSiblingSubGrammarComponent();
     JSONValueTerminatorComposite->addSubGrammarComponent(*newSiblingComponent);
+
+    // Comma pops object and grammar 
+    StringCharacterSet *closeCurlyBrace = new StringCharacterSet("}");
+    CompositeSubGrammarComponent *JSONObjectTerminatorComposite = new CompositeSubGrammarComponent();
+    JSONObjectTerminatorComposite->addSubGrammarComponent(*popComponent);
+    JSONObjectTerminatorComposite->addSubGrammarComponent(*popNameComponent);
+    // JSONObjectTerminatorComposite->addSubGrammarComponent(*popComponent);
+    JSONObjectTerminatorComposite->addSubGrammarComponent(*popNameComponent);
+    JSONValueSubGrammar->addComponent(closeCurlyBrace, JSONObjectTerminatorComposite);
 
     SubGrammarParser *JSONValueSubGrammarParser = new SubGrammarParser (*JSONValueSubGrammar);
     addSubGrammarParser("JSON.value", JSONValueSubGrammarParser);
